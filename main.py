@@ -6,25 +6,36 @@ from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori
 import matplotlib.pyplot as plt
 import seaborn as sns
-df = pd.read_csv('ItemList.csv', low_memory=False, sep='\t', header=None, names=['products'])
-ls = list(df["products"].apply(lambda x: x.split(',')))
+data = pd.read_csv('ItemList.csv', low_memory=False, sep='\t', header=None, names=['products'])
+lg = len(data)
+# print(data)
+ls = list(data["products"].apply(lambda x: x.split(',')))
 for x in ls[:]:
     del x[0]
 
 te = TransactionEncoder()
 te_data = te.fit(ls).transform(ls)
-df = pd.DataFrame(te_data, columns=te.columns_)
-df1 = apriori(df, min_support=0.01, use_colnames=True)
-df1.sort_values(by="support", ascending=False, inplace=True)
-df1['length'] = df1['itemsets'].apply(lambda x: len(x))
+dataf = pd.DataFrame(te_data, columns=te.columns_)
+df = apriori(dataf, min_support=0.001, use_colnames=True)
+df.sort_values(by="support", ascending=False, inplace=True)
+df['product'] = df['itemsets'].apply(lambda x: len(x))
+df['sup'] = df['support'].apply(lambda x: x * lg)
+df['rsup'] = df['support'].apply(lambda x: x * 100)
+# df['confidence'] = df['itemsets'].apply(lambda x: {
+#     if len(x) == 2: print(x)
+# })
+ls = list(df.values)
+print(ls)
 
-products = list(df1['itemsets'].head(20).apply(lambda x: list(x)[0]).astype("unicode"))
-suppost = list(df1['support'].head(20))
-products10 = list(df1['itemsets'].head(10).apply(lambda x: list(x)[0]).astype("unicode"))
-suppost10 = list(df1['support'].head(10))
+products = list(df['itemsets'].head(20).apply(lambda x: list(x)[0]).astype("unicode"))
+suppost = list(df['support'].head(20))
+products10 = list(df['itemsets'].head(10).apply(lambda x: list(x)[0]).astype("unicode"))
+suppost10 = list(df['support'].head(10))
 
-print(products)
-print(suppost)
+# print(products)
+# print(suppost)
+# df = df[(df.length == 2)]
+print(df)
 
 plt.figure(figsize=(15, 10))
 plt.bar(products10, suppost10, color='maroon', width=0.4)
