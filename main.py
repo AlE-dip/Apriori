@@ -6,50 +6,31 @@ from mlxtend.frequent_patterns import apriori, association_rules
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
-data = pd.read_csv('ItemList.csv', low_memory=False, sep='\t', header=None, names=['products'])
+data = pd.read_csv('store_data.csv', low_memory=False, sep='\t', header=None, names=['products'])
+# data = pd.read_csv('ItemList.csv', low_memory=False, sep='\t', header=None, names=['products'])
 lg = len(data)
 
 ls = list(data["products"].apply(lambda x: x.split(',')))
-for x in ls[:]:
-    del x[0]
+# for x in ls[:]:
+#     del x[0]
 
 te = TransactionEncoder()
 te_data = te.fit(ls).transform(ls)
 dataf = pd.DataFrame(te_data, columns=te.columns_)
-df = apriori(dataf, min_support=0.001, use_colnames=True)
-df_ar = association_rules(df, metric="confidence", min_threshold = 0.1)
+df = apriori(dataf, min_support=0.01, use_colnames=True)
+df_ar = association_rules(df, metric="confidence", min_threshold = 0.4)
 df.sort_values(by="support", ascending=False, inplace=True)
 df['product'] = df['itemsets'].apply(lambda x: len(x))
-# df.sort_values(by="product", ascending=False, inplace=True)
+
 print(df.to_string())
+
 df = df.head(10)
 df['sup'] = df['support'].apply(lambda x: x * lg)
-# df['rsup'] = df['support'].apply(lambda x: x * 100)
-
-# def conf(itemsets):
-#     if len(itemsets) > 1:
-#         ls = list(itemsets)
-#         df1 = df.loc[df['itemsets'].apply(lambda x: len(x) == 1 and list(x)[0]).astype("unicode") == ls[0]]
-#         df2 = df.loc[df['itemsets'].apply(lambda x: x == itemsets)]
-#         fl1 = df1.sup.values
-#         fl2 = df2.sup.values
-#         fl3 = float(fl2 * 100 / fl1)
-#         return fl3
-
-# df['confidence'] = df['itemsets'].apply(lambda x: conf(x))
-# print(df[['itemsets', 'sup']])
 
 products10 = list(df['itemsets'].apply(lambda x: list(x)[0]).astype("unicode"))
 support10 = list(df['sup'])
 df10 = pd.DataFrame(list(zip(products10, support10)), columns=['products', 'support'])
 df10 = df10.reset_index()
-
-# df1 = df.loc[df['itemsets'].apply(lambda x: len(x) == 2)]
-# df1 = df1.loc[df1['confidence'].apply(lambda x: x > 5)]
-# df1.sort_values(by="confidence", ascending=False, inplace=True)
-# products = list(df1['itemsets'].head(10).apply(lambda x: nameProduct(x)).astype("unicode"))
-# suppost = list(df1['confidence'].head(10).values)
 
 def nameProduct(itemsets):
     df_ar1 = df_ar.loc[df_ar['antecedents'].apply(lambda x: x == itemsets)]
@@ -72,12 +53,39 @@ confidence = list(df_ar['confidence'].head(10).values)
 support = list(df_ar['support'].head(10).apply(lambda x: x * lg))
 df1 = pd.DataFrame(list(zip(products, support, confidence)), columns=['products', 'support', 'confidence'])
 df1 = df1.reset_index()
-# print(df1)
 
-# print(products)
-# print(suppost)
-# df = df[(df.length == 2)]
-# print(df)
+print(df_ar.to_string())
+
+plt.figure(figsize=(15, 10))
+plots = sns.barplot(x="products", y="support", data=df10)
+for bar in plots.patches:
+    plots.annotate(int(bar.get_height()),
+                   (bar.get_x() + bar.get_width() / 2,
+                    bar.get_height()), ha='center', va='center',
+                   size=15, xytext=(0, 8),
+                   textcoords='offset points')
+plt.xticks(rotation=10)
+plt.xlabel("Product", size=14)
+plt.ylabel("Count of product", size=14)
+plt.title('Top 10 product purchased by customers', color='green', size=20)
+plt.show()
+
+plt.figure(figsize=(15, 10))
+plots = sns.barplot(x="products", y="confidence", data=df1, palette='gnuplot')
+i = 0
+for bar in plots.patches:
+    plots.annotate(int(support[i]),
+                   (bar.get_x() + bar.get_width() / 2,
+                    bar.get_height()), ha='center', va='center',
+                   size=15, xytext=(0, 8),
+                   textcoords='offset points')
+    i += 1
+plt.xticks(rotation=6)
+plt.xlabel("Items", size=14)
+plt.ylabel("%", size=14)
+plt.ylim(0, 1)
+plt.title('Confidence', color='green', size=20)
+plt.show()
 
 # df.to_csv(r'data\df.txt', header=True, index=True, sep='\t', mode='a')
 
@@ -96,20 +104,6 @@ df1 = df1.reset_index()
 # plt.ylim(0, 1)
 # plt.title('Confidence', color='green', size=10)
 # plt.show()
-
-plt.figure(figsize=(15, 10))
-plots = sns.barplot(x="products", y="support", data=df10)
-for bar in plots.patches:
-    plots.annotate(int(bar.get_height()),
-                   (bar.get_x() + bar.get_width() / 2,
-                    bar.get_height()), ha='center', va='center',
-                   size=15, xytext=(0, 8),
-                   textcoords='offset points')
-plt.xticks(rotation=10)
-plt.xlabel("Product", size=14)
-plt.ylabel("Count of product", size=14)
-plt.title('Top 10 product purchased by customers', color='green', size=20)
-plt.show()
 
 # products10.append('other product')
 # def otherProduct():
@@ -134,21 +128,7 @@ plt.show()
 # plt.show()
 
 # Defining the plot size
-plt.figure(figsize=(15, 10))
-plots = sns.barplot(x="products", y="confidence", data=df1, palette='gnuplot')
-i = 0
-for bar in plots.patches:
-    plots.annotate(int(support[i]),
-                   (bar.get_x() + bar.get_width() / 2,
-                    bar.get_height()), ha='center', va='center',
-                   size=15, xytext=(0, 8),
-                   textcoords='offset points')
-    i += 1
-plt.xticks(rotation=10)
-plt.xlabel("Items", size=14)
-plt.ylabel("%", size=14)
-plt.title('Confidence', color='green', size=20)
-plt.show()
+
 
 # Show top 10
 # def showTopOfDf(itemsets):
@@ -172,7 +152,7 @@ plt.show()
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
 # print(df)
 # print(df1)
-print(df_ar.to_string())
+
 # df_ar.to_csv(r'data\df.txt', header=True, index=True, sep='\t', mode='a')
 
 # print(list(df.head(10).values))
